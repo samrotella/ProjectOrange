@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { Camera, Upload, X, Loader2 } from 'lucide-react'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { Camera, Upload, X } from 'lucide-react'
 import type { PhotoRecord } from '../../types'
 import { uploadPhoto } from '../../services/storage'
 
@@ -7,57 +7,72 @@ interface Props {
   photos: PhotoRecord[]
   onPhotosChange: (photos: PhotoRecord[]) => void
   storagePath: string
-  onUploadingChange?: (uploading: boolean) => void
 }
 
 interface PendingPhoto {
   localId: string
+  file: File
   objectUrl: string
 }
 
-export function PhotoCapture({ photos, onPhotosChange, storagePath, onUploadingChange }: Props) {
+export interface PhotoCaptureHandle {
+  /** Upload any photos that were selected but not yet stored, then return the full photo list. */
+  uploadPending: () => Promise<PhotoRecord[]>
+}
+
+export const PhotoCapture = forwardRef<PhotoCaptureHandle, Props>(function PhotoCapture(
+  { photos, onPhotosChange, storagePath },
+  ref,
+) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<PendingPhoto[]>([])
   const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
 
-  const handleFiles = async (files: FileList | null, inputEl: HTMLInputElement | null) => {
+  const handleFiles = (files: FileList | null, inputEl: HTMLInputElement | null) => {
     if (!files?.length) return
     // Reset input so iOS camera can be triggered again immediately
     if (inputEl) inputEl.value = ''
-
     setError(null)
-    const fileArray = Array.from(files)
 
-    // Show local previews right away
-    const previews: PendingPhoto[] = fileArray.map(f => ({
+    // Hold the files locally and show previews; actual upload happens on save.
+    const additions: PendingPhoto[] = Array.from(files).map(f => ({
       localId: crypto.randomUUID(),
+      file: f,
       objectUrl: URL.createObjectURL(f),
     }))
-    setPending(prev => [...prev, ...previews])
-    onUploadingChange?.(true)
-
-    try {
-      const uploads = await Promise.all(
-        fileArray.map(f => uploadPhoto(f, storagePath))
-      )
-      onPhotosChange([...photos, ...uploads])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed. Check that your Supabase "photos" bucket exists and is public.')
-    } finally {
-      setPending(prev => {
-        const next = prev.filter(p => !previews.find(q => q.localId === p.localId))
-        if (next.length === 0) onUploadingChange?.(false)
-        return next
-      })
-      previews.forEach(p => URL.revokeObjectURL(p.objectUrl))
-    }
+    setPending(prev => [...prev, ...additions])
   }
 
-  const remove = (id: string) => {
+  const removeUploaded = (id: string) => {
     onPhotosChange(photos.filter(p => p.id !== id))
   }
+
+  const removePending = (localId: string) => {
+    setPending(prev => {
+      const target = prev.find(p => p.localId === localId)
+      if (target) URL.revokeObjectURL(target.objectUrl)
+      return prev.filter(p => p.localId !== localId)
+    })
+  }
+
+  useImperativeHandle(ref, () => ({
+    uploadPending: async () => {
+      if (pending.length === 0) return photos
+      try {
+        const uploaded = await Promise.all(pending.map(p => uploadPhoto(p.file, storagePath)))
+        const next = [...photos, ...uploaded]
+        pending.forEach(p => URL.revokeObjectURL(p.objectUrl))
+        setPending([])
+        onPhotosChange(next)
+        return next
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Upload failed. Check that your Supabase "photos" bucket exists and is public.')
+        throw err
+      }
+    },
+  }), [pending, photos, storagePath, onPhotosChange])
 
   const allThumbs = [
     ...photos.map(p => ({ id: p.id, url: p.url, pending: false })),
@@ -76,22 +91,20 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath, onUploadingC
                 src={p.url}
                 alt="Photo"
                 className="w-full h-full object-cover rounded-lg cursor-pointer"
-                onClick={() => !p.pending && setPreview(p.url)}
+                onClick={() => setPreview(p.url)}
               />
               {p.pending && (
-                <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
-                  <Loader2 size={20} className="text-white animate-spin" />
-                </div>
+                <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                  Not saved
+                </span>
               )}
-              {!p.pending && (
-                <button
-                  type="button"
-                  onClick={() => remove(p.id)}
-                  className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X size={12} />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => (p.pending ? removePending(p.id) : removeUploaded(p.id))}
+                className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X size={12} />
+              </button>
             </div>
           ))}
         </div>
@@ -118,7 +131,7 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath, onUploadingC
             py-3 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
         >
           <Upload size={18} />
-          Upload
+          Upload Photo
         </button>
       </div>
 
@@ -153,4 +166,4 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath, onUploadingC
       )}
     </div>
   )
-}
+})

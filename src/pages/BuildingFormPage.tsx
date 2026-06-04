@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { ArrowLeft, Trash2 } from 'lucide-react'
@@ -8,7 +8,7 @@ import type { Building, PhotoRecord } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
-import { PhotoCapture } from '../components/ui/PhotoCapture'
+import { PhotoCapture, type PhotoCaptureHandle } from '../components/ui/PhotoCapture'
 import { Card, CardBody, CardHeader } from '../components/ui/Card'
 
 const BUILDING_TYPES = ['Office', 'Warehouse', 'Retail', 'Educational', 'Healthcare', 'Residential', 'Industrial', 'Mixed Use', 'Other']
@@ -27,7 +27,7 @@ export function BuildingFormPage() {
   const navigate = useNavigate()
   const { orgId } = useAuth()
   const [photos, setPhotos] = useState<PhotoRecord[]>([])
-  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const photoCaptureRef = useRef<PhotoCaptureHandle>(null)
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -49,8 +49,10 @@ export function BuildingFormPage() {
   const onSubmit = async (data: FormValues) => {
     setSaving(true)
     try {
+      // Upload any newly-selected photos to Supabase storage before saving the record
+      const uploadedPhotos = (await photoCaptureRef.current?.uploadPending()) ?? photos
       const payload: Omit<Building, 'id' | 'createdAt' | 'updatedAt'> = {
-        ...data, photos, orgId,
+        ...data, photos: uploadedPhotos, orgId,
       }
       if (isEdit && id) await updateBuilding(id, payload)
       else await createBuilding(payload)
@@ -109,10 +111,10 @@ export function BuildingFormPage() {
           <CardHeader><span className="font-semibold text-gray-800">Photos</span></CardHeader>
           <CardBody>
             <PhotoCapture
+              ref={photoCaptureRef}
               photos={photos}
               onPhotosChange={setPhotos}
               storagePath={`${orgId}/buildings`}
-              onUploadingChange={setUploadingPhotos}
             />
           </CardBody>
         </Card>
@@ -125,7 +127,7 @@ export function BuildingFormPage() {
           )}
           <div className="flex gap-3 ml-auto">
             <Button type="button" variant="secondary" onClick={() => navigate(-1)}>Cancel</Button>
-            <Button type="submit" loading={saving || uploadingPhotos}>
+            <Button type="submit" loading={saving}>
               {isEdit ? 'Save Changes' : 'Create Building'}
             </Button>
           </div>
