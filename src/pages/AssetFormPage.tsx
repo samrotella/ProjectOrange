@@ -5,7 +5,7 @@ import { ArrowLeft, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getAsset, createAsset, updateAsset, deleteAsset } from '../services/assets'
 import { getBuildings } from '../services/buildings'
-import type { Asset, Building, PhotoRecord, CustomField, ConditionRating, RSMeansItem } from '../types'
+import type { Asset, Building, PhotoRecord, CustomField, ConditionRating, RSMeansItem, Priority } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
@@ -15,12 +15,26 @@ import { CustomFieldsEditor } from '../components/ui/CustomFieldsEditor'
 import { RSMeansPicker } from '../components/assets/RSMeansPicker'
 import { Card, CardBody, CardHeader } from '../components/ui/Card'
 
+const PRIORITY_OPTIONS = [
+  { value: '', label: '— None —' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
+]
+
 interface FormValues {
   name: string
   item: string
   location: string
   namePlate: string
   buildingId: string
+  priority: string
+  quantity: string
+  installYear: string
+  expectedLifespan: string
+  warrantyExpiry: string
+  lastServiceDate: string
   notes: string
 }
 
@@ -36,6 +50,7 @@ export function AssetFormPage() {
   const [condition, setCondition] = useState<ConditionRating | null>(null)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [rsMeansItem, setRsMeansItem] = useState<RSMeansItem | undefined>()
+  const [priority, setPriority] = useState<Priority | undefined>()
   const [buildings, setBuildings] = useState<Building[]>([])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
@@ -43,7 +58,7 @@ export function AssetFormPage() {
   const [conditionError, setConditionError] = useState('')
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { name: '', item: '', location: '', namePlate: '', buildingId: searchParams.get('buildingId') ?? '', notes: '' },
+    defaultValues: { name: '', item: '', location: '', namePlate: '', buildingId: searchParams.get('buildingId') ?? '', priority: '', quantity: '', installYear: '', expectedLifespan: '', warrantyExpiry: '', lastServiceDate: '', notes: '' },
   })
 
   useEffect(() => {
@@ -55,9 +70,23 @@ export function AssetFormPage() {
     if (!id) return
     getAsset(id).then(a => {
       if (a) {
-        reset({ name: a.name, item: a.item, location: a.location, namePlate: a.namePlate ?? '', buildingId: a.buildingId ?? '', notes: a.notes ?? '' })
+        reset({
+          name: a.name,
+          item: a.item,
+          location: a.location,
+          namePlate: a.namePlate ?? '',
+          buildingId: a.buildingId ?? '',
+          priority: a.priority ?? '',
+          quantity: a.quantity != null ? String(a.quantity) : '',
+          installYear: a.installYear != null ? String(a.installYear) : '',
+          expectedLifespan: a.expectedLifespan != null ? String(a.expectedLifespan) : '',
+          warrantyExpiry: a.warrantyExpiry ?? '',
+          lastServiceDate: a.lastServiceDate ?? '',
+          notes: a.notes ?? '',
+        })
         setPhotos(a.photos)
         setCondition(a.condition)
+        setPriority(a.priority)
         setCustomFields(a.customFields)
         setRsMeansItem(a.rsMeansItem)
       }
@@ -72,8 +101,18 @@ export function AssetFormPage() {
       // Upload any newly-selected photos to Supabase storage before saving the record
       const uploadedPhotos = (await photoCaptureRef.current?.uploadPending()) ?? photos
       const payload: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'> = {
-        ...data,
+        name: data.name,
+        item: data.item,
+        location: data.location,
+        namePlate: data.namePlate || undefined,
         buildingId: data.buildingId || undefined,
+        notes: data.notes || undefined,
+        priority: (data.priority as Priority) || undefined,
+        quantity: data.quantity ? Number(data.quantity) : undefined,
+        installYear: data.installYear ? Number(data.installYear) : undefined,
+        expectedLifespan: data.expectedLifespan ? Number(data.expectedLifespan) : undefined,
+        warrantyExpiry: data.warrantyExpiry || undefined,
+        lastServiceDate: data.lastServiceDate || undefined,
         condition,
         photos: uploadedPhotos,
         customFields,
@@ -119,6 +158,18 @@ export function AssetFormPage() {
             <Input label="Location *" {...register('location', { required: 'Location is required' })} error={errors.location?.message} placeholder="e.g. Roof Level 3, Room 301" />
             <Input label="Name Plate / Model" {...register('namePlate')} placeholder="Manufacturer, model, serial #" />
             <Select label="Building" options={buildingOptions} {...register('buildingId')} />
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Install Year" type="number" {...register('installYear')} placeholder="e.g. 2010" />
+              <Input label="Expected Lifespan (yrs)" type="number" {...register('expectedLifespan')} placeholder="e.g. 20" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Quantity" type="number" {...register('quantity')} placeholder="e.g. 1" />
+              <Select label="Priority" options={PRIORITY_OPTIONS} {...register('priority')} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="Warranty Expiry" type="date" {...register('warrantyExpiry')} />
+              <Input label="Last Service Date" type="date" {...register('lastServiceDate')} />
+            </div>
             <Input label="Notes" {...register('notes')} placeholder="Additional observations…" />
           </CardBody>
         </Card>
