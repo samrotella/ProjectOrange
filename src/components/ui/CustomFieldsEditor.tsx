@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import type { CustomField, CustomFieldType } from '../../types'
 import { Input } from './Input'
 import { Select } from './Select'
+import { uuid } from '../../utils/uuid'
 
 const TYPE_OPTIONS = [
   { value: 'text', label: 'Text' },
@@ -23,7 +24,7 @@ export function CustomFieldsEditor({ fields, onChange }: Props) {
     if (!newLabel.trim()) return
     onChange([
       ...fields,
-      { id: crypto.randomUUID(), label: newLabel.trim(), type: newType, value: '' },
+      { id: uuid(), label: newLabel.trim(), type: newType, value: '' },
     ])
     setNewLabel('')
     setNewType('text')
