@@ -11,8 +11,12 @@ function fromFirestore(id: string, data: Record<string, unknown>): Building {
   return {
     ...(data as Omit<Building, 'id' | 'createdAt' | 'updatedAt'>),
     id,
-    createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : String(data.createdAt ?? ''),
-    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : String(data.updatedAt ?? ''),
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate().toISOString()
+      : String(data.createdAt ?? ''),
+    updatedAt: data.updatedAt instanceof Timestamp
+      ? data.updatedAt.toDate().toISOString()
+      : String(data.updatedAt ?? ''),
   }
 }
 
@@ -29,7 +33,11 @@ export async function getBuilding(id: string): Promise<Building | null> {
 }
 
 export async function createBuilding(data: Omit<Building, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, COL), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+  const ref = await addDoc(collection(db, COL), {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
   return ref.id
 }
 

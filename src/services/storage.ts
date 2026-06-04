@@ -2,7 +2,10 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { storage } from './firebase'
 import type { PhotoRecord } from '../types'
 
-export async function uploadPhoto(file: File, path: string): Promise<PhotoRecord> {
+export async function uploadPhoto(
+  file: File,
+  path: string
+): Promise<PhotoRecord> {
   const id = crypto.randomUUID()
   const ext = file.name.split('.').pop() ?? 'jpg'
   const storageRef = ref(storage, `${path}/${id}.${ext}`)

@@ -27,7 +27,7 @@ export function AssetDetailPage() {
     }).finally(() => setLoading(false))
   }, [id])
 
-  if (loading) return <div className="text-center py-16 text-gray-400">Loading...</div>
+  if (loading) return <div className="text-center py-16 text-gray-400">Loading…</div>
   if (!asset) return <div className="text-center py-16 text-gray-400">Asset not found.</div>
 
   return (
@@ -55,7 +55,7 @@ export function AssetDetailPage() {
         <CardBody className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">Condition</span>
-            <Badge color={conditionColor(asset.condition)}>{asset.condition} - {conditionLabel(asset.condition)}</Badge>
+            <Badge color={conditionColor(asset.condition)}>{asset.condition} — {conditionLabel(asset.condition)}</Badge>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <MapPin size={16} className="text-gray-400" />
@@ -86,7 +86,7 @@ export function AssetDetailPage() {
           </CardHeader>
           <CardBody className="flex flex-col gap-2 text-sm">
             <p className="font-medium text-gray-900">{asset.rsMeansItem.description}</p>
-            <p className="text-xs text-gray-400">Line #{asset.rsMeansItem.lineNumber} - Unit: {asset.rsMeansItem.unit}</p>
+            <p className="text-xs text-gray-400">Line #{asset.rsMeansItem.lineNumber} · Unit: {asset.rsMeansItem.unit}</p>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1 text-gray-600">
               <span>Material: <strong>{fmt(asset.rsMeansItem.materialCost)}</strong></span>
               <span>Labor: <strong>{fmt(asset.rsMeansItem.laborCost)}</strong></span>
@@ -107,7 +107,7 @@ export function AssetDetailPage() {
               {asset.customFields.map(f => (
                 <div key={f.id}>
                   <dt className="text-xs text-gray-500">{f.label}</dt>
-                  <dd className="text-sm font-medium text-gray-900">{String(f.value) || '-'}</dd>
+                  <dd className="text-sm font-medium text-gray-900">{String(f.value) || '—'}</dd>
                 </div>
               ))}
             </dl>

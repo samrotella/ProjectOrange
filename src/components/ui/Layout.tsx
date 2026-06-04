@@ -22,6 +22,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Top nav */}
       <header className="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -29,6 +30,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <span className="font-bold text-base tracking-tight">CapEx Assess</span>
           </div>
 
+          {/* Desktop nav */}
           <nav className="hidden sm:flex items-center gap-1">
             {NAV.map(n => (
               <NavLink
@@ -57,6 +59,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
+        {/* Mobile nav drawer */}
         {menuOpen && (
           <nav className="sm:hidden border-t border-blue-800 px-4 py-3 flex flex-col gap-1">
             {NAV.map(n => (

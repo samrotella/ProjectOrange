@@ -22,13 +22,15 @@ export function BuildingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Buildings</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{buildings.length} facilit{buildings.length !== 1 ? 'ies' : 'y'}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{buildings.length} facility{buildings.length !== 1 ? 'ies' : 'y'}</p>
         </div>
-        <Link to="/buildings/new"><Button><Plus size={16} /> Add Building</Button></Link>
+        <Link to="/buildings/new">
+          <Button><Plus size={16} /> Add Building</Button>
+        </Link>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading...</div>
+        <div className="text-center py-12 text-gray-400">Loading…</div>
       ) : buildings.length === 0 ? (
         <Card>
           <div className="py-16 flex flex-col items-center gap-3 text-gray-400">

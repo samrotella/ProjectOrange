@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Building2 } from 'lucide-react'
+import { BuildingIcon } from 'lucide-react'
 
 type Mode = 'signin' | 'signup' | 'reset'
 
@@ -46,7 +46,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8">
         <div className="flex flex-col items-center gap-2 mb-8">
           <div className="bg-blue-700 text-white p-3 rounded-xl">
-            <Building2 size={28} />
+            <BuildingIcon size={28} />
           </div>
           <h1 className="text-xl font-bold text-gray-900">CapEx Assess</h1>
           <p className="text-sm text-gray-500">Capital Planning & Asset Assessment</p>

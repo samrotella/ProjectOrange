@@ -69,7 +69,12 @@ export function AssetFormPage() {
     setSaving(true)
     try {
       const payload: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'> = {
-        ...data, condition, photos, customFields, rsMeansItem, orgId,
+        ...data,
+        condition,
+        photos,
+        customFields,
+        rsMeansItem,
+        orgId,
       }
       if (isEdit && id) await updateAsset(id, payload)
       else await createAsset(payload)
@@ -82,15 +87,15 @@ export function AssetFormPage() {
   const handleDelete = async () => {
     if (!id || !confirm('Delete this asset?')) return
     setDeleting(true)
-    const snap = await getAsset(id)
+    const snap = await import('../services/assets').then(m => m.getAsset(id))
     await deleteAsset(id)
     navigate(snap?.buildingId ? `/buildings/${snap.buildingId}` : '/assets')
   }
 
-  if (loading) return <div className="text-center py-16 text-gray-400">Loading...</div>
+  if (loading) return <div className="text-center py-16 text-gray-400">Loading…</div>
 
   const buildingOptions = [
-    { value: '', label: '- None -' },
+    { value: '', label: '— None —' },
     ...buildings.map(b => ({ value: b.id, label: b.name })),
   ]
 
@@ -110,7 +115,7 @@ export function AssetFormPage() {
             <Input label="Location *" {...register('location', { required: 'Location is required' })} error={errors.location?.message} placeholder="e.g. Roof Level 3, Room 301" />
             <Input label="Name Plate / Model" {...register('namePlate')} placeholder="Manufacturer, model, serial #" />
             <Select label="Building" options={buildingOptions} {...register('buildingId')} />
-            <Input label="Notes" {...register('notes')} placeholder="Additional observations..." />
+            <Input label="Notes" {...register('notes')} placeholder="Additional observations…" />
           </CardBody>
         </Card>
 

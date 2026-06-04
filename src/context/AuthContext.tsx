@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sendPasswordResetEmail(auth, email)
   }
 
+  // Use UID as org ID — swap for a real org lookup when multi-tenant support is added
   const orgId = user?.uid ?? ''
 
   return (

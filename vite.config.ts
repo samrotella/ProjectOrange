@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'CapEx Assess - Capital Planning Tool',
+        name: 'CapEx Assess — Capital Planning Tool',
         short_name: 'CapEx Assess',
         description: 'Asset & facility assessment for capital planning',
         theme_color: '#1d4ed8',
