@@ -1,50 +1,69 @@
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  getDocs, getDoc, query, where, serverTimestamp, Timestamp,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 import type { Building } from '../types'
 
-const COL = 'buildings'
-
-function fromFirestore(id: string, data: Record<string, unknown>): Building {
-  return {
-    ...(data as Omit<Building, 'id' | 'createdAt' | 'updatedAt'>),
-    id,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate().toISOString()
-      : String(data.createdAt ?? ''),
-    updatedAt: data.updatedAt instanceof Timestamp
-      ? data.updatedAt.toDate().toISOString()
-      : String(data.updatedAt ?? ''),
-  }
-}
+const TABLE = 'buildings'
 
 export async function getBuildings(orgId: string): Promise<Building[]> {
-  const q = query(collection(db, COL), where('orgId', '==', orgId))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => fromFirestore(d.id, d.data() as Record<string, unknown>))
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map(fromRow)
 }
 
 export async function getBuilding(id: string): Promise<Building | null> {
-  const snap = await getDoc(doc(db, COL, id))
-  if (!snap.exists()) return null
-  return fromFirestore(snap.id, snap.data() as Record<string, unknown>)
+  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single()
+  if (error) return null
+  return fromRow(data)
 }
 
-export async function createBuilding(data: Omit<Building, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, COL), {
-    ...data,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-  return ref.id
+export async function createBuilding(building: Omit<Building, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert(toRow(building))
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
 }
 
-export async function updateBuilding(id: string, data: Partial<Building>): Promise<void> {
-  await updateDoc(doc(db, COL, id), { ...data, updatedAt: serverTimestamp() })
+export async function updateBuilding(id: string, building: Partial<Building>): Promise<void> {
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ ...toRow(building as Omit<Building, 'id' | 'createdAt' | 'updatedAt'>), updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function deleteBuilding(id: string): Promise<void> {
-  await deleteDoc(doc(db, COL, id))
+  const { error } = await supabase.from(TABLE).delete().eq('id', id)
+  if (error) throw error
+}
+
+// Supabase uses snake_case columns; our app uses camelCase
+function fromRow(row: Record<string, unknown>): Building {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    address: (row.address as string) ?? '',
+    buildingType: (row.building_type as string) ?? '',
+    photos: (row.photos as Building['photos']) ?? [],
+    notes: (row.notes as string) ?? undefined,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+    orgId: row.org_id as string,
+  }
+}
+
+function toRow(b: Partial<Omit<Building, 'id' | 'createdAt' | 'updatedAt'>>) {
+  return {
+    ...(b.name !== undefined && { name: b.name }),
+    ...(b.address !== undefined && { address: b.address }),
+    ...(b.buildingType !== undefined && { building_type: b.buildingType }),
+    ...(b.photos !== undefined && { photos: b.photos }),
+    ...(b.notes !== undefined && { notes: b.notes }),
+    ...(b.orgId !== undefined && { org_id: b.orgId }),
+  }
 }
