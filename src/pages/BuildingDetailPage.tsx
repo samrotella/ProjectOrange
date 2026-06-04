@@ -17,7 +17,6 @@ export function BuildingDetailPage() {
   const [building, setBuilding] = useState<Building | null>(null)
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
-  const [preview, setPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id || !orgId) return
@@ -26,7 +25,7 @@ export function BuildingDetailPage() {
       .finally(() => setLoading(false))
   }, [id, orgId])
 
-  if (loading) return <div className="text-center py-16 text-gray-400">Loading...</div>
+  if (loading) return <div className="text-center py-16 text-gray-400">Loading…</div>
   if (!building) return <div className="text-center py-16 text-gray-400">Building not found.</div>
 
   return (
@@ -45,7 +44,7 @@ export function BuildingDetailPage() {
       {building.photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {building.photos.map(p => (
-            <img key={p.id} src={p.url} alt={building.name} className="w-full h-32 object-cover rounded-xl cursor-pointer" onClick={() => setPreview(p.url)} />
+            <img key={p.id} src={p.url} alt={p.caption ?? building.name} className="w-full h-32 object-cover rounded-xl" />
           ))}
         </div>
       )}
@@ -88,7 +87,7 @@ export function BuildingDetailPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-gray-900 truncate">{a.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{a.item} - {a.location}</p>
+                    <p className="text-xs text-gray-400 truncate">{a.item} · {a.location}</p>
                   </div>
                   <Badge color={conditionColor(a.condition)}>{conditionLabel(a.condition)}</Badge>
                 </Link>
@@ -97,12 +96,6 @@ export function BuildingDetailPage() {
           </ul>
         )}
       </Card>
-
-      {preview && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
-          <img src={preview} className="max-w-full max-h-full rounded-xl object-contain" />
-        </div>
-      )}
     </div>
   )
 }

@@ -48,7 +48,9 @@ export function BuildingFormPage() {
   const onSubmit = async (data: FormValues) => {
     setSaving(true)
     try {
-      const payload: Omit<Building, 'id' | 'createdAt' | 'updatedAt'> = { ...data, photos, orgId }
+      const payload: Omit<Building, 'id' | 'createdAt' | 'updatedAt'> = {
+        ...data, photos, orgId,
+      }
       if (isEdit && id) await updateBuilding(id, payload)
       else await createBuilding(payload)
       navigate('/buildings')
@@ -64,7 +66,7 @@ export function BuildingFormPage() {
     navigate('/buildings')
   }
 
-  if (loading) return <div className="text-center py-16 text-gray-400">Loading...</div>
+  if (loading) return <div className="text-center py-16 text-gray-400">Loading…</div>
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl mx-auto">
@@ -79,17 +81,37 @@ export function BuildingFormPage() {
         <Card>
           <CardHeader><span className="font-semibold text-gray-800">Building Details</span></CardHeader>
           <CardBody className="flex flex-col gap-4">
-            <Input label="Building Name *" {...register('name', { required: 'Name is required' })} error={errors.name?.message} />
-            <Input label="Address" {...register('address')} placeholder="123 Main St, City, State 00000" />
-            <Select label="Building Type" options={BUILDING_TYPES} {...register('buildingType')} />
-            <Input label="Notes" {...register('notes')} placeholder="Additional notes..." />
+            <Input
+              label="Building Name *"
+              {...register('name', { required: 'Name is required' })}
+              error={errors.name?.message}
+            />
+            <Input
+              label="Address"
+              {...register('address')}
+              placeholder="123 Main St, City, State 00000"
+            />
+            <Select
+              label="Building Type"
+              options={BUILDING_TYPES}
+              {...register('buildingType')}
+            />
+            <Input
+              label="Notes"
+              {...register('notes')}
+              placeholder="Additional notes…"
+            />
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader><span className="font-semibold text-gray-800">Photos</span></CardHeader>
           <CardBody>
-            <PhotoCapture photos={photos} onPhotosChange={setPhotos} storagePath={`buildings/${orgId}`} />
+            <PhotoCapture
+              photos={photos}
+              onPhotosChange={setPhotos}
+              storagePath={`buildings/${orgId}`}
+            />
           </CardBody>
         </Card>
 
@@ -101,7 +123,9 @@ export function BuildingFormPage() {
           )}
           <div className="flex gap-3 ml-auto">
             <Button type="button" variant="secondary" onClick={() => navigate(-1)}>Cancel</Button>
-            <Button type="submit" loading={saving}>{isEdit ? 'Save Changes' : 'Create Building'}</Button>
+            <Button type="submit" loading={saving}>
+              {isEdit ? 'Save Changes' : 'Create Building'}
+            </Button>
           </div>
         </div>
       </form>

@@ -1,11 +1,18 @@
 import type { RSMeansItem } from '../types'
 
+// RSMeans API integration (Gordian RSMeans Cost Data)
+// Set VITE_RSMEANS_API_KEY and VITE_RSMEANS_API_URL in your .env to connect
+// to the live API. When the key is absent the service falls back to the
+// built-in sample dataset so the UI is fully functional during development.
+
 const API_KEY = import.meta.env.VITE_RSMEANS_API_KEY as string | undefined
 const API_URL = import.meta.env.VITE_RSMEANS_API_URL as string | undefined
 
+// Sample dataset drawn from RSMeans Facilities Construction Cost Data.
+// These cover the most common mechanical / electrical building systems.
 const SAMPLE_DATA: RSMeansItem[] = [
   { lineNumber: '23 05 23.10 0200', description: 'Air handling unit, up to 2000 CFM', unit: 'Ea', materialCost: 3250, laborCost: 680, equipmentCost: 0, totalCost: 3930 },
-  { lineNumber: '23 05 23.10 0400', description: 'Air handling unit, 2001-5000 CFM', unit: 'Ea', materialCost: 6100, laborCost: 1050, equipmentCost: 0, totalCost: 7150 },
+  { lineNumber: '23 05 23.10 0400', description: 'Air handling unit, 2001–5000 CFM', unit: 'Ea', materialCost: 6100, laborCost: 1050, equipmentCost: 0, totalCost: 7150 },
   { lineNumber: '23 09 93.20 0100', description: 'Boiler, hot water, gas-fired, 500 MBH', unit: 'Ea', materialCost: 8200, laborCost: 1400, equipmentCost: 0, totalCost: 9600 },
   { lineNumber: '23 09 93.20 0200', description: 'Boiler, hot water, gas-fired, 1000 MBH', unit: 'Ea', materialCost: 13500, laborCost: 2100, equipmentCost: 0, totalCost: 15600 },
   { lineNumber: '23 74 13.10 0100', description: 'Chiller, scroll, air-cooled, 20 ton', unit: 'Ea', materialCost: 18500, laborCost: 2800, equipmentCost: 500, totalCost: 21800 },
@@ -29,18 +36,25 @@ const SAMPLE_DATA: RSMeansItem[] = [
 export async function searchRSMeans(query: string): Promise<RSMeansItem[]> {
   if (API_KEY && API_URL) {
     try {
-      const resp = await fetch(`${API_URL}/items?search=${encodeURIComponent(query)}&pagesize=20`, {
-        headers: { 'Authorization': `Bearer ${API_KEY}`, 'Accept': 'application/json' },
-      })
+      const resp = await fetch(
+        `${API_URL}/items?search=${encodeURIComponent(query)}&pagesize=20`,
+        { headers: { 'Authorization': `Bearer ${API_KEY}`, 'Accept': 'application/json' } }
+      )
       if (resp.ok) {
         const data = await resp.json()
+        // Gordian API returns { items: [...] }
         return (data.items ?? data) as RSMeansItem[]
       }
-    } catch { /* fall through */ }
+    } catch {
+      // fall through to sample data
+    }
   }
+
   const lower = query.toLowerCase()
-  return SAMPLE_DATA.filter(item =>
-    item.description.toLowerCase().includes(lower) || item.lineNumber.includes(lower)
+  return SAMPLE_DATA.filter(
+    item =>
+      item.description.toLowerCase().includes(lower) ||
+      item.lineNumber.includes(lower)
   )
 }
 
@@ -51,7 +65,9 @@ export async function getRSMeansItem(lineNumber: string): Promise<RSMeansItem | 
         headers: { 'Authorization': `Bearer ${API_KEY}`, 'Accept': 'application/json' },
       })
       if (resp.ok) return (await resp.json()) as RSMeansItem
-    } catch { /* fall through */ }
+    } catch {
+      // fall through
+    }
   }
   return SAMPLE_DATA.find(i => i.lineNumber === lineNumber) ?? null
 }

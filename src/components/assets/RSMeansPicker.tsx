@@ -49,7 +49,7 @@ export function RSMeansPicker({ value, onChange }: Props) {
       {value ? (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm">
           <p className="font-semibold text-blue-900">{value.description}</p>
-          <p className="text-xs text-blue-600 mt-0.5">#{value.lineNumber} - Unit: {value.unit}</p>
+          <p className="text-xs text-blue-600 mt-0.5">#{value.lineNumber} · Unit: {value.unit}</p>
           <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-700">
             <span>Material: <strong>{fmt(value.materialCost)}</strong></span>
             <span>Labor: <strong>{fmt(value.laborCost)}</strong></span>
@@ -58,14 +58,16 @@ export function RSMeansPicker({ value, onChange }: Props) {
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="w-full flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 hover:border-blue-400 transition-colors"
-        >
-          <DollarSign size={16} />
-          Search RSMeans cost data...
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="w-full flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-500 hover:border-blue-400 transition-colors"
+          >
+            <DollarSign size={16} />
+            Search RSMeans cost data...
+          </button>
+        </div>
       )}
 
       {(open || results.length > 0) && !value && (
@@ -75,11 +77,11 @@ export function RSMeansPicker({ value, onChange }: Props) {
             <input
               autoFocus
               className="flex-1 text-sm outline-none"
-              placeholder="Search by description or line number..."
+              placeholder="Search by description or line number…"
               value={query}
               onChange={e => setQuery(e.target.value)}
             />
-            {searching && <span className="text-xs text-gray-400">Searching...</span>}
+            {searching && <span className="text-xs text-gray-400">Searching…</span>}
           </div>
           {results.length > 0 && (
             <ul className="max-h-60 overflow-y-auto divide-y divide-gray-50">
@@ -91,7 +93,7 @@ export function RSMeansPicker({ value, onChange }: Props) {
                     className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors"
                   >
                     <p className="text-sm font-medium text-gray-900 truncate">{item.description}</p>
-                    <p className="text-xs text-gray-500">#{item.lineNumber} - {item.unit} - Total: {fmt(item.totalCost)}</p>
+                    <p className="text-xs text-gray-500">#{item.lineNumber} · {item.unit} · Total: {fmt(item.totalCost)}</p>
                   </button>
                 </li>
               ))}

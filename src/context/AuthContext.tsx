@@ -1,10 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import {
-  signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signOut as firebaseSignOut, onAuthStateChanged,
-  sendPasswordResetEmail, type User,
-} from 'firebase/auth'
-import { auth } from '../services/firebase'
+import type { User } from '@supabase/supabase-js'
+import { supabase } from '../services/supabase'
 
 interface AuthContextValue {
   user: User | null
@@ -23,30 +19,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => {
-      setUser(u)
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null)
       setLoading(false)
     })
-    return unsub
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
   }
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password)
+    const { error } = await supabase.auth.signUp({ email, password })
+    if (error) throw error
   }
 
   const signOut = async () => {
-    await firebaseSignOut(auth)
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
   }
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email)
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
+    if (error) throw error
   }
 
-  const orgId = user?.uid ?? ''
+  const orgId = user?.id ?? ''
 
   return (
     <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, resetPassword, orgId }}>

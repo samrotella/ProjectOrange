@@ -32,13 +32,15 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Capital planning overview</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Capital planning overview</p>
+        </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading...</div>
+        <div className="text-center py-12 text-gray-400">Loading…</div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -106,7 +108,7 @@ export function DashboardPage() {
                           </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{a.name}</p>
-                            <p className="text-xs text-gray-400 truncate">{a.item} - {a.location}</p>
+                            <p className="text-xs text-gray-400 truncate">{a.item} · {a.location}</p>
                           </div>
                         </Link>
                       </li>

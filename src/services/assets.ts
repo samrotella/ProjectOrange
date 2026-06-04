@@ -1,43 +1,76 @@
-import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
-  getDocs, getDoc, query, where, serverTimestamp, Timestamp,
-} from 'firebase/firestore'
-import { db } from './firebase'
+import { supabase } from './supabase'
 import type { Asset } from '../types'
 
-const COL = 'assets'
-
-function fromFirestore(id: string, data: Record<string, unknown>): Asset {
-  return {
-    ...(data as Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>),
-    id,
-    createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : String(data.createdAt ?? ''),
-    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : String(data.updatedAt ?? ''),
-  }
-}
+const TABLE = 'assets'
 
 export async function getAssets(orgId: string, buildingId?: string): Promise<Asset[]> {
-  let q = query(collection(db, COL), where('orgId', '==', orgId))
-  if (buildingId) q = query(collection(db, COL), where('orgId', '==', orgId), where('buildingId', '==', buildingId))
-  const snap = await getDocs(q)
-  return snap.docs.map(d => fromFirestore(d.id, d.data() as Record<string, unknown>))
+  let q = supabase.from(TABLE).select('*').eq('org_id', orgId).order('created_at', { ascending: false })
+  if (buildingId) q = q.eq('building_id', buildingId)
+  const { data, error } = await q
+  if (error) throw error
+  return (data ?? []).map(fromRow)
 }
 
 export async function getAsset(id: string): Promise<Asset | null> {
-  const snap = await getDoc(doc(db, COL, id))
-  if (!snap.exists()) return null
-  return fromFirestore(snap.id, snap.data() as Record<string, unknown>)
+  const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single()
+  if (error) return null
+  return fromRow(data)
 }
 
-export async function createAsset(data: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const ref = await addDoc(collection(db, COL), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
-  return ref.id
+export async function createAsset(asset: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert(toRow(asset))
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
 }
 
-export async function updateAsset(id: string, data: Partial<Asset>): Promise<void> {
-  await updateDoc(doc(db, COL, id), { ...data, updatedAt: serverTimestamp() })
+export async function updateAsset(id: string, asset: Partial<Asset>): Promise<void> {
+  const { error } = await supabase
+    .from(TABLE)
+    .update({ ...toRow(asset as Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>), updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function deleteAsset(id: string): Promise<void> {
-  await deleteDoc(doc(db, COL, id))
+  const { error } = await supabase.from(TABLE).delete().eq('id', id)
+  if (error) throw error
+}
+
+function fromRow(row: Record<string, unknown>): Asset {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    item: (row.item as string) ?? '',
+    location: (row.location as string) ?? '',
+    condition: row.condition as Asset['condition'],
+    photos: (row.photos as Asset['photos']) ?? [],
+    namePlate: (row.name_plate as string) ?? undefined,
+    buildingId: (row.building_id as string) ?? undefined,
+    rsMeansItem: (row.rs_means_item as Asset['rsMeansItem']) ?? undefined,
+    customFields: (row.custom_fields as Asset['customFields']) ?? [],
+    notes: (row.notes as string) ?? undefined,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+    orgId: row.org_id as string,
+  }
+}
+
+function toRow(a: Partial<Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>>) {
+  return {
+    ...(a.name !== undefined && { name: a.name }),
+    ...(a.item !== undefined && { item: a.item }),
+    ...(a.location !== undefined && { location: a.location }),
+    ...(a.condition !== undefined && { condition: a.condition }),
+    ...(a.photos !== undefined && { photos: a.photos }),
+    ...(a.namePlate !== undefined && { name_plate: a.namePlate }),
+    ...(a.buildingId !== undefined && { building_id: a.buildingId }),
+    ...(a.rsMeansItem !== undefined && { rs_means_item: a.rsMeansItem }),
+    ...(a.customFields !== undefined && { custom_fields: a.customFields }),
+    ...(a.notes !== undefined && { notes: a.notes }),
+    ...(a.orgId !== undefined && { org_id: a.orgId }),
+  }
 }

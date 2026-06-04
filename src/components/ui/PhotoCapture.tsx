@@ -34,6 +34,9 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
+      <span className="text-sm font-medium text-gray-700">Photos</span>
+
+      {/* Photo grid */}
       {photos.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map(p => (
@@ -56,6 +59,7 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath }: Props) {
         </div>
       )}
 
+      {/* Upload / camera buttons */}
       <div className="flex gap-2">
         <button
           type="button"
@@ -82,6 +86,7 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath }: Props) {
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" multiple onChange={e => handleFiles(e.target.files)} />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" multiple onChange={e => handleFiles(e.target.files)} />
 
+      {/* Lightbox */}
       {preview && (
         <div
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
