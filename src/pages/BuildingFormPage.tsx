@@ -27,6 +27,7 @@ export function BuildingFormPage() {
   const navigate = useNavigate()
   const { orgId } = useAuth()
   const [photos, setPhotos] = useState<PhotoRecord[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -111,6 +112,7 @@ export function BuildingFormPage() {
               photos={photos}
               onPhotosChange={setPhotos}
               storagePath={`${orgId}/buildings`}
+              onUploadingChange={setUploadingPhotos}
             />
           </CardBody>
         </Card>
@@ -123,7 +125,7 @@ export function BuildingFormPage() {
           )}
           <div className="flex gap-3 ml-auto">
             <Button type="button" variant="secondary" onClick={() => navigate(-1)}>Cancel</Button>
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={saving || uploadingPhotos}>
               {isEdit ? 'Save Changes' : 'Create Building'}
             </Button>
           </div>

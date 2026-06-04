@@ -32,6 +32,7 @@ export function AssetFormPage() {
   const { orgId } = useAuth()
 
   const [photos, setPhotos] = useState<PhotoRecord[]>([])
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [condition, setCondition] = useState<ConditionRating | null>(null)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [rsMeansItem, setRsMeansItem] = useState<RSMeansItem | undefined>()
@@ -129,7 +130,7 @@ export function AssetFormPage() {
         <Card>
           <CardHeader><span className="font-semibold text-gray-800">Photos</span></CardHeader>
           <CardBody>
-            <PhotoCapture photos={photos} onPhotosChange={setPhotos} storagePath={`${orgId}/assets`} />
+            <PhotoCapture photos={photos} onPhotosChange={setPhotos} storagePath={`${orgId}/assets`} onUploadingChange={setUploadingPhotos} />
           </CardBody>
         </Card>
 
@@ -155,7 +156,7 @@ export function AssetFormPage() {
           )}
           <div className="flex gap-3 ml-auto">
             <Button type="button" variant="secondary" onClick={() => navigate(-1)}>Cancel</Button>
-            <Button type="submit" loading={saving}>{isEdit ? 'Save Changes' : 'Create Asset'}</Button>
+            <Button type="submit" loading={saving || uploadingPhotos}>{isEdit ? 'Save Changes' : 'Create Asset'}</Button>
           </div>
         </div>
       </form>
