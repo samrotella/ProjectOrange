@@ -110,7 +110,7 @@ export function BuildingFormPage() {
             <PhotoCapture
               photos={photos}
               onPhotosChange={setPhotos}
-              storagePath={`buildings/${orgId}`}
+              storagePath={`${orgId}/buildings`}
             />
           </CardBody>
         </Card>

@@ -129,7 +129,7 @@ export function AssetFormPage() {
         <Card>
           <CardHeader><span className="font-semibold text-gray-800">Photos</span></CardHeader>
           <CardBody>
-            <PhotoCapture photos={photos} onPhotosChange={setPhotos} storagePath={`assets/${orgId}`} />
+            <PhotoCapture photos={photos} onPhotosChange={setPhotos} storagePath={`${orgId}/assets`} />
           </CardBody>
         </Card>
 

@@ -4,17 +4,24 @@ import type { PhotoRecord } from '../types'
 const BUCKET = 'photos'
 
 export async function uploadPhoto(file: File, path: string): Promise<PhotoRecord> {
+  // path must be non-empty and must not contain empty UUID-like segments.
+  // Supabase storage RLS policies commonly cast the first path segment to uuid,
+  // so paths are structured as "{orgId}/assets/..." or "{orgId}/buildings/...".
+  if (!path || path.includes('//') || path.startsWith('/')) {
+    throw new Error('Cannot upload: user session not ready. Please wait a moment and try again.')
+  }
+  const segments = path.split('/')
+  if (segments.some(s => s === '')) {
+    throw new Error('Cannot upload: invalid storage path (empty segment). Please reload and try again.')
+  }
+
   const id = crypto.randomUUID()
-  // Derive extension from MIME type; jpeg → jpg, default to jpg
   const mime = file.type || 'image/jpeg'
   const ext = mime === 'image/jpeg' ? 'jpg' : (mime.split('/')[1] ?? 'jpg')
-  // Guard against empty path segments (e.g. if orgId is blank)
-  const filePath = [path, `${id}.${ext}`].filter(Boolean).join('/').replace(/\/+/g, '/')
+  const filePath = `${path}/${id}.${ext}`
 
   console.debug('[storage] uploading', { filePath, mime, size: file.size })
 
-  // Let the SDK infer content-type from the File object — do not set it explicitly,
-  // as some Supabase versions reject the request when it is passed alongside a File.
   const { error } = await supabase.storage.from(BUCKET).upload(filePath, file)
 
   if (error) {
