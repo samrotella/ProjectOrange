@@ -5,31 +5,33 @@ const BUCKET = 'photos'
 
 export async function uploadPhoto(file: File, path: string): Promise<PhotoRecord> {
   const id = crypto.randomUUID()
-  // Use the MIME type from the File object; jpeg is the safe default for camera captures
-  const contentType = file.type || 'image/jpeg'
-  const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg'
-  const filePath = `${path}/${id}.${ext}`
+  // Derive extension from MIME type; jpeg → jpg, default to jpg
+  const mime = file.type || 'image/jpeg'
+  const ext = mime === 'image/jpeg' ? 'jpg' : (mime.split('/')[1] ?? 'jpg')
+  // Guard against empty path segments (e.g. if orgId is blank)
+  const filePath = [path, `${id}.${ext}`].filter(Boolean).join('/').replace(/\/+/g, '/')
 
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filePath, file, { contentType })
+  console.debug('[storage] uploading', { filePath, mime, size: file.size })
+
+  // Let the SDK infer content-type from the File object — do not set it explicitly,
+  // as some Supabase versions reject the request when it is passed alongside a File.
+  const { error } = await supabase.storage.from(BUCKET).upload(filePath, file)
 
   if (error) {
-    console.error('[storage] upload error:', error)
+    console.error('[storage] upload error', { status: (error as { statusCode?: string }).statusCode, message: error.message, error })
     const status = (error as { statusCode?: string }).statusCode
-    const isPolicy =
-      status === '403' ||
-      error.message.toLowerCase().includes('policy') ||
-      error.message.toLowerCase().includes('row-level') ||
-      error.message.toLowerCase().includes('not authorized')
-    throw new Error(
-      isPolicy
-        ? 'Upload blocked by storage policy. In Supabase: Storage → photos → Policies → add INSERT for role "authenticated".'
-        : `Upload failed (${status ?? 'unknown'}): ${error.message}`
-    )
+    const msg = error.message.toLowerCase()
+    if (status === '403' || msg.includes('policy') || msg.includes('row-level') || msg.includes('not authorized')) {
+      throw new Error('Upload blocked by storage policy. In Supabase: Storage → photos → Policies → add INSERT for role "authenticated".')
+    }
+    if (status === '400') {
+      throw new Error(`Upload rejected (400): ${error.message} — check browser DevTools console for full details.`)
+    }
+    throw new Error(`Upload failed (${status ?? 'unknown'}): ${error.message}`)
   }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath)
+  console.debug('[storage] uploaded OK', data.publicUrl)
   return { id, url: data.publicUrl, takenAt: new Date().toISOString() }
 }
 
