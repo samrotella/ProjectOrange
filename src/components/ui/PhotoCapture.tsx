@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { Camera, Upload, X } from 'lucide-react'
 import type { PhotoRecord } from '../../types'
 import { uploadPhoto } from '../../services/storage'
+import { uuid } from '../../utils/uuid'
 
 interface Props {
   photos: PhotoRecord[]
@@ -38,7 +39,7 @@ export const PhotoCapture = forwardRef<PhotoCaptureHandle, Props>(function Photo
 
     // Hold the files locally and show previews; actual upload happens on save.
     const additions: PendingPhoto[] = Array.from(files).map(f => ({
-      localId: crypto.randomUUID(),
+      localId: uuid(),
       file: f,
       objectUrl: URL.createObjectURL(f),
     }))

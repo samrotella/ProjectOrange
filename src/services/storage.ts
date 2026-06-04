@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { PhotoRecord } from '../types'
+import { uuid } from '../utils/uuid'
 
 const BUCKET = 'photos'
 
@@ -15,7 +16,7 @@ export async function uploadPhoto(file: File, path: string): Promise<PhotoRecord
     throw new Error('Cannot upload: invalid storage path (empty segment). Please reload and try again.')
   }
 
-  const id = crypto.randomUUID()
+  const id = uuid()
   const mime = file.type || 'image/jpeg'
   const ext = mime === 'image/jpeg' ? 'jpg' : (mime.split('/')[1] ?? 'jpg')
   const filePath = `${path}/${id}.${ext}`
