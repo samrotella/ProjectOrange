@@ -7,6 +7,7 @@ interface Props {
   photos: PhotoRecord[]
   onPhotosChange: (photos: PhotoRecord[]) => void
   storagePath: string
+  onUploadingChange?: (uploading: boolean) => void
 }
 
 interface PendingPhoto {
@@ -14,7 +15,7 @@ interface PendingPhoto {
   objectUrl: string
 }
 
-export function PhotoCapture({ photos, onPhotosChange, storagePath }: Props) {
+export function PhotoCapture({ photos, onPhotosChange, storagePath, onUploadingChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<PendingPhoto[]>([])
@@ -35,6 +36,7 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath }: Props) {
       objectUrl: URL.createObjectURL(f),
     }))
     setPending(prev => [...prev, ...previews])
+    onUploadingChange?.(true)
 
     try {
       const uploads = await Promise.all(
@@ -44,7 +46,11 @@ export function PhotoCapture({ photos, onPhotosChange, storagePath }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed. Check that your Supabase "photos" bucket exists and is public.')
     } finally {
-      setPending(prev => prev.filter(p => !previews.find(q => q.localId === p.localId)))
+      setPending(prev => {
+        const next = prev.filter(p => !previews.find(q => q.localId === p.localId))
+        if (next.length === 0) onUploadingChange?.(false)
+        return next
+      })
       previews.forEach(p => URL.revokeObjectURL(p.objectUrl))
     }
   }
