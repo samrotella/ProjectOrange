@@ -48,7 +48,7 @@ export function LoginPage() {
           <div className="bg-blue-700 text-white p-3 rounded-xl">
             <BuildingIcon size={28} />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">CapEx Assess</h1>
+          <h1 className="text-xl font-bold text-gray-900">Project Orange</h1>
           <p className="text-sm text-gray-500">Capital Planning & Asset Assessment</p>
         </div>
 

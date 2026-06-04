@@ -23,11 +23,11 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top nav */}
-      <header className="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
+      <header className="bg-blue-900 text-white shadow-lg sticky top-0 z-40" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Building2 size={22} />
-            <span className="font-bold text-base tracking-tight">CapEx Assess</span>
+            <span className="font-bold text-base tracking-tight">Project Orange</span>
           </div>
 
           {/* Desktop nav */}

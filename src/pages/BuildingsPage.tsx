@@ -22,7 +22,7 @@ export function BuildingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Buildings</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{buildings.length} facility{buildings.length !== 1 ? 'ies' : 'y'}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{buildings.length} building{buildings.length !== 1 ? 's' : ''}</p>
         </div>
         <Link to="/buildings/new">
           <Button><Plus size={16} /> Add Building</Button>

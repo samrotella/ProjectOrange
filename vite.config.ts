@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'CapEx Assess — Capital Planning Tool',
-        short_name: 'CapEx Assess',
-        description: 'Asset & facility assessment for capital planning',
+        name: 'Project Orange — Capital Planning Tool',
+        short_name: 'Project Orange',
+        description: 'Asset & building assessment for capital planning',
         theme_color: '#1d4ed8',
         background_color: '#ffffff',
         display: 'standalone',
@@ -26,10 +26,10 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'firebase-storage',
+              cacheName: 'supabase-storage',
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
