@@ -50,7 +50,6 @@ export function AssetFormPage() {
   const [condition, setCondition] = useState<ConditionRating | null>(null)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [rsMeansItem, setRsMeansItem] = useState<RSMeansItem | undefined>()
-  const [priority, setPriority] = useState<Priority | undefined>()
   const [buildings, setBuildings] = useState<Building[]>([])
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
@@ -86,7 +85,6 @@ export function AssetFormPage() {
         })
         setPhotos(a.photos)
         setCondition(a.condition)
-        setPriority(a.priority)
         setCustomFields(a.customFields)
         setRsMeansItem(a.rsMeansItem)
       }
