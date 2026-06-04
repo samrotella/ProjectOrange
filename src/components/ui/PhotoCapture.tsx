@@ -33,12 +33,15 @@ export const PhotoCapture = forwardRef<PhotoCaptureHandle, Props>(function Photo
 
   const handleFiles = (files: FileList | null, inputEl: HTMLInputElement | null) => {
     if (!files?.length) return
+    // Snapshot the files BEFORE touching the input: `files` is the input's live
+    // FileList, so resetting input.value below would otherwise empty it.
+    const fileArray = Array.from(files)
     // Reset input so iOS camera can be triggered again immediately
     if (inputEl) inputEl.value = ''
     setError(null)
 
     // Hold the files locally and show previews; actual upload happens on save.
-    const additions: PendingPhoto[] = Array.from(files).map(f => ({
+    const additions: PendingPhoto[] = fileArray.map(f => ({
       localId: uuid(),
       file: f,
       objectUrl: URL.createObjectURL(f),
