@@ -71,6 +71,7 @@ export function AssetFormPage() {
     try {
       const payload: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'> = {
         ...data,
+        buildingId: data.buildingId || undefined,
         condition,
         photos,
         customFields,

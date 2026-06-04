@@ -67,7 +67,7 @@ function toRow(a: Partial<Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>>) {
     ...(a.condition !== undefined && { condition: a.condition }),
     ...(a.photos !== undefined && { photos: a.photos }),
     ...(a.namePlate !== undefined && { name_plate: a.namePlate }),
-    ...(a.buildingId !== undefined && { building_id: a.buildingId }),
+    ...(a.buildingId !== undefined && a.buildingId !== '' && { building_id: a.buildingId }),
     ...(a.rsMeansItem !== undefined && { rs_means_item: a.rsMeansItem }),
     ...(a.customFields !== undefined && { custom_fields: a.customFields }),
     ...(a.notes !== undefined && { notes: a.notes }),
