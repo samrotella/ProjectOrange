@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Edit2, Building2, MapPin, Tag, DollarSign } from 'lucide-react'
+import { ArrowLeft, Edit2, Building2, MapPin, Tag, DollarSign, Calendar, Clock, AlertTriangle, Hash } from 'lucide-react'
 import { getAsset } from '../services/assets'
 import { getBuilding } from '../services/buildings'
 import type { Asset, Building } from '../types'
@@ -10,6 +10,13 @@ import { Badge } from '../components/ui/Badge'
 import { conditionColor, conditionLabel } from '../components/ui/ConditionPicker'
 
 const fmt = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+
+const PRIORITY_COLOR: Record<string, string> = {
+  low: 'green',
+  medium: 'yellow',
+  high: 'orange',
+  critical: 'red',
+}
 
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -67,10 +74,47 @@ export function AssetDetailPage() {
               <Link to={`/buildings/${building.id}`} className="text-blue-600 hover:underline">{building.name}</Link>
             </div>
           )}
+          {asset.priority && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Priority</span>
+              <Badge color={PRIORITY_COLOR[asset.priority] ?? 'gray'}>{asset.priority.charAt(0).toUpperCase() + asset.priority.slice(1)}</Badge>
+            </div>
+          )}
           {asset.namePlate && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Tag size={16} className="text-gray-400" />
               {asset.namePlate}
+            </div>
+          )}
+          {(asset.installYear != null || asset.expectedLifespan != null) && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Calendar size={16} className="text-gray-400" />
+              {asset.installYear && <span>Installed {asset.installYear}</span>}
+              {asset.installYear && asset.expectedLifespan && <span className="text-gray-400">·</span>}
+              {asset.expectedLifespan && (
+                <span>
+                  {asset.expectedLifespan} yr lifespan
+                  {asset.installYear && ` (replace ~${asset.installYear + asset.expectedLifespan})`}
+                </span>
+              )}
+            </div>
+          )}
+          {asset.quantity != null && asset.quantity !== 1 && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Hash size={16} className="text-gray-400" />
+              Qty: {asset.quantity}
+            </div>
+          )}
+          {asset.warrantyExpiry && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <AlertTriangle size={16} className="text-gray-400" />
+              Warranty expires {new Date(asset.warrantyExpiry).toLocaleDateString()}
+            </div>
+          )}
+          {asset.lastServiceDate && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Clock size={16} className="text-gray-400" />
+              Last serviced {new Date(asset.lastServiceDate).toLocaleDateString()}
             </div>
           )}
           {asset.notes && <p className="text-sm text-gray-500">{asset.notes}</p>}

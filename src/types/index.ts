@@ -1,5 +1,7 @@
 export type ConditionRating = 1 | 2 | 3 | 4 | 5
 
+export type Priority = 'low' | 'medium' | 'high' | 'critical'
+
 export type CustomFieldType = 'text' | 'number' | 'date'
 
 export interface CustomField {
@@ -21,6 +23,10 @@ export interface Building {
   name: string
   address: string
   buildingType: string
+  yearBuilt?: number
+  squareFootage?: number
+  numberOfFloors?: number
+  constructionType?: string
   photos: PhotoRecord[]
   notes?: string
   createdAt: string
@@ -45,6 +51,12 @@ export interface Asset {
   item: string
   location: string
   condition: ConditionRating
+  priority?: Priority
+  quantity?: number
+  installYear?: number
+  expectedLifespan?: number
+  warrantyExpiry?: string
+  lastServiceDate?: string
   photos: PhotoRecord[]
   namePlate?: string
   buildingId?: string

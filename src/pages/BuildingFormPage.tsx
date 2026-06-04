@@ -14,10 +14,17 @@ import { Card, CardBody, CardHeader } from '../components/ui/Card'
 const BUILDING_TYPES = ['Office', 'Warehouse', 'Retail', 'Educational', 'Healthcare', 'Residential', 'Industrial', 'Mixed Use', 'Other']
   .map(v => ({ value: v, label: v }))
 
+const CONSTRUCTION_TYPES = ['Steel Frame', 'Masonry', 'Concrete', 'Wood Frame', 'Pre-Engineered Metal', 'Tilt-Up Concrete', 'Other']
+  .map(v => ({ value: v, label: v }))
+
 interface FormValues {
   name: string
   address: string
   buildingType: string
+  yearBuilt: string
+  squareFootage: string
+  numberOfFloors: string
+  constructionType: string
   notes: string
 }
 
@@ -33,14 +40,23 @@ export function BuildingFormPage() {
   const [deleting, setDeleting] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { name: '', address: '', buildingType: 'Office', notes: '' },
+    defaultValues: { name: '', address: '', buildingType: 'Office', yearBuilt: '', squareFootage: '', numberOfFloors: '', constructionType: '', notes: '' },
   })
 
   useEffect(() => {
     if (!id) return
     getBuilding(id).then(b => {
       if (b) {
-        reset({ name: b.name, address: b.address, buildingType: b.buildingType, notes: b.notes ?? '' })
+        reset({
+          name: b.name,
+          address: b.address,
+          buildingType: b.buildingType,
+          yearBuilt: b.yearBuilt ? String(b.yearBuilt) : '',
+          squareFootage: b.squareFootage ? String(b.squareFootage) : '',
+          numberOfFloors: b.numberOfFloors ? String(b.numberOfFloors) : '',
+          constructionType: b.constructionType ?? '',
+          notes: b.notes ?? '',
+        })
         setPhotos(b.photos)
       }
     }).finally(() => setLoading(false))
@@ -52,7 +68,16 @@ export function BuildingFormPage() {
       // Upload any newly-selected photos to Supabase storage before saving the record
       const uploadedPhotos = (await photoCaptureRef.current?.uploadPending()) ?? photos
       const payload: Omit<Building, 'id' | 'createdAt' | 'updatedAt'> = {
-        ...data, photos: uploadedPhotos, orgId,
+        name: data.name,
+        address: data.address,
+        buildingType: data.buildingType,
+        yearBuilt: data.yearBuilt ? Number(data.yearBuilt) : undefined,
+        squareFootage: data.squareFootage ? Number(data.squareFootage) : undefined,
+        numberOfFloors: data.numberOfFloors ? Number(data.numberOfFloors) : undefined,
+        constructionType: data.constructionType || undefined,
+        notes: data.notes || undefined,
+        photos: uploadedPhotos,
+        orgId,
       }
       if (isEdit && id) await updateBuilding(id, payload)
       else await createBuilding(payload)
@@ -98,6 +123,31 @@ export function BuildingFormPage() {
               label="Building Type"
               options={BUILDING_TYPES}
               {...register('buildingType')}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Year Built"
+                type="number"
+                {...register('yearBuilt')}
+                placeholder="e.g. 1995"
+              />
+              <Input
+                label="Floors"
+                type="number"
+                {...register('numberOfFloors')}
+                placeholder="e.g. 3"
+              />
+            </div>
+            <Input
+              label="Square Footage"
+              type="number"
+              {...register('squareFootage')}
+              placeholder="e.g. 45000"
+            />
+            <Select
+              label="Construction Type"
+              options={[{ value: '', label: '— Select —' }, ...CONSTRUCTION_TYPES]}
+              {...register('constructionType')}
             />
             <Input
               label="Notes"

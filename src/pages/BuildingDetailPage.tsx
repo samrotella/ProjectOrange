@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit2, Plus, Package, MapPin } from 'lucide-react'
+import { ArrowLeft, Edit2, Plus, Package, MapPin, Calendar, Layers, Maximize2, Wrench } from 'lucide-react'
 import { getBuilding } from '../services/buildings'
 import { getAssets } from '../services/assets'
 import { useAuth } from '../context/AuthContext'
@@ -55,6 +55,30 @@ export function BuildingDetailPage() {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin size={16} className="text-gray-400" />
               {building.address}
+            </div>
+          )}
+          {building.yearBuilt && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Calendar size={16} className="text-gray-400" />
+              Built {building.yearBuilt}
+            </div>
+          )}
+          {building.squareFootage && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Maximize2 size={16} className="text-gray-400" />
+              {building.squareFootage.toLocaleString()} sq ft
+            </div>
+          )}
+          {building.numberOfFloors && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Layers size={16} className="text-gray-400" />
+              {building.numberOfFloors} {building.numberOfFloors === 1 ? 'floor' : 'floors'}
+            </div>
+          )}
+          {building.constructionType && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Wrench size={16} className="text-gray-400" />
+              {building.constructionType}
             </div>
           )}
           {building.notes && <p className="text-sm text-gray-500 mt-1">{building.notes}</p>}
