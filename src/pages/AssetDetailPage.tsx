@@ -11,7 +11,9 @@ import { conditionColor, conditionLabel } from '../components/ui/ConditionPicker
 
 const fmt = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 
-const PRIORITY_COLOR: Record<string, string> = {
+type Color = 'green' | 'yellow' | 'orange' | 'red' | 'blue' | 'gray'
+
+const PRIORITY_COLOR: Record<string, Color> = {
   low: 'green',
   medium: 'yellow',
   high: 'orange',
