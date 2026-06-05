@@ -22,6 +22,11 @@ export interface GridColumn<T> {
   render?: (row: T) => ReactNode
   editable?: boolean
   editType?: EditType
+  /**
+   * Click handler for the cell. When set, the cell renders as a link/button and
+   * clicking it invokes this instead of inline-editing or row navigation.
+   */
+  onClick?: (row: T) => void
   /** Options for `editType: 'select'`. */
   options?: { value: string; label: string }[]
   /**
@@ -321,7 +326,12 @@ export function DataGrid<T>({
                     {visibleColumns.map(col => {
                       const isEditing = editing?.rowId === rowId && editing.key === col.key
                       const rawValue = col.accessor(row)
-                      const display = col.render ? col.render(row) : (rawValue ?? '—')
+                      const baseDisplay = col.render ? col.render(row) : (rawValue ?? '—')
+                      const display = col.onClick ? (
+                        <span className="text-blue-700 font-medium hover:underline">{baseDisplay}</span>
+                      ) : (
+                        baseDisplay
+                      )
 
                       if (isEditing) {
                         return (
@@ -369,7 +379,10 @@ export function DataGrid<T>({
                         <td
                           key={col.key}
                           onClick={e => {
-                            if (col.editable && onSave) {
+                            if (col.onClick) {
+                              e.stopPropagation()
+                              col.onClick(row)
+                            } else if (col.editable && onSave) {
                               e.stopPropagation()
                               startEdit(rowId, col, String(rawValue ?? ''))
                             } else if (onRowClick) {
@@ -377,8 +390,9 @@ export function DataGrid<T>({
                             }
                           }}
                           className={`px-3 py-2 text-gray-700 whitespace-nowrap ${alignClass(col.align)}
+                            ${col.onClick ? 'cursor-pointer' : ''}
                             ${col.editable && onSave ? 'cursor-text hover:bg-blue-100/60 rounded' : ''}`}
-                          title={col.editable && onSave ? 'Click to edit' : undefined}
+                          title={col.onClick ? 'Open details' : col.editable && onSave ? 'Click to edit' : undefined}
                         >
                           {display}
                         </td>
