@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Package, Search, ChevronRight } from 'lucide-react'
+import { Plus, Package, Search, ChevronRight, Edit2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getAssets, updateAsset } from '../services/assets'
 import type { Asset, ConditionRating } from '../types'
@@ -10,8 +10,11 @@ import { Badge } from '../components/ui/Badge'
 import { conditionColor, conditionLabel } from '../components/ui/ConditionPicker'
 import { DataGrid, type GridColumn } from '../components/ui/DataGrid'
 import { ViewToggle, type ViewMode } from '../components/ui/ViewToggle'
+import { RecordModal, type DetailField } from '../components/ui/RecordModal'
 
 const VIEW_KEY = 'assets:view'
+
+const fmtCurrency = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Low' },
@@ -28,70 +31,94 @@ const CONDITION_OPTIONS = [
   { value: '1', label: '1 — Critical' },
 ]
 
-const assetColumns: GridColumn<Asset>[] = [
-  { key: 'name', header: 'Name', accessor: a => a.name, editable: true, editType: 'text', width: 200 },
-  { key: 'item', header: 'Type', accessor: a => a.item, editable: true, editType: 'text' },
-  { key: 'location', header: 'Location', accessor: a => a.location, editable: true, editType: 'text' },
+function buildAssetColumns(onOpen: (a: Asset) => void): GridColumn<Asset>[] {
+  return [
+    { key: 'name', header: 'Name', accessor: a => a.name, onClick: onOpen, width: 200 },
+    { key: 'item', header: 'Type', accessor: a => a.item, editable: true, editType: 'text' },
+    { key: 'location', header: 'Location', accessor: a => a.location, editable: true, editType: 'text' },
+    {
+      key: 'condition',
+      header: 'Condition',
+      accessor: a => a.condition,
+      render: a => <Badge color={conditionColor(a.condition)}>{conditionLabel(a.condition)}</Badge>,
+      editable: true,
+      editType: 'select',
+      options: CONDITION_OPTIONS,
+      toPatch: raw => ({ condition: Number(raw) as ConditionRating }),
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+      accessor: a => a.priority ?? '',
+      render: a => (a.priority ? a.priority.charAt(0).toUpperCase() + a.priority.slice(1) : '—'),
+      editable: true,
+      editType: 'select',
+      options: PRIORITY_OPTIONS,
+    },
+    { key: 'quantity', header: 'Qty', accessor: a => a.quantity ?? '', editable: true, editType: 'number', align: 'right' },
+    { key: 'installYear', header: 'Install Yr', accessor: a => a.installYear ?? '', editable: true, editType: 'number', align: 'right' },
+    {
+      key: 'expectedLifespan',
+      header: 'Lifespan (yrs)',
+      accessor: a => a.expectedLifespan ?? '',
+      editable: true,
+      editType: 'number',
+      align: 'right',
+      defaultHidden: true,
+    },
+    {
+      key: 'cost',
+      header: 'RS Means Cost',
+      accessor: a => a.rsMeansItem?.totalCost ?? '',
+      render: a =>
+        a.rsMeansItem ? (
+          <span className="text-blue-600">
+            ${a.rsMeansItem.totalCost.toLocaleString()} / {a.rsMeansItem.unit}
+          </span>
+        ) : (
+          '—'
+        ),
+      align: 'right',
+      defaultHidden: true,
+    },
+    {
+      key: 'notes',
+      header: 'Notes',
+      accessor: a => a.notes ?? '',
+      editable: true,
+      editType: 'text',
+      defaultHidden: true,
+    },
+    {
+      key: 'updatedAt',
+      header: 'Updated',
+      accessor: a => a.updatedAt,
+      render: a => new Date(a.updatedAt).toLocaleDateString(),
+      defaultHidden: true,
+    },
+  ]
+}
+
+const assetDetailFields: DetailField<Asset>[] = [
+  { key: 'name', label: 'Name', value: a => a.name, type: 'text' },
+  { key: 'item', label: 'Type', value: a => a.item, type: 'text' },
+  { key: 'location', label: 'Location', value: a => a.location, type: 'text' },
   {
     key: 'condition',
-    header: 'Condition',
-    accessor: a => a.condition,
-    render: a => <Badge color={conditionColor(a.condition)}>{conditionLabel(a.condition)}</Badge>,
-    editable: true,
-    editType: 'select',
+    label: 'Condition',
+    value: a => String(a.condition),
+    type: 'select',
     options: CONDITION_OPTIONS,
     toPatch: raw => ({ condition: Number(raw) as ConditionRating }),
   },
-  {
-    key: 'priority',
-    header: 'Priority',
-    accessor: a => a.priority ?? '',
-    render: a => (a.priority ? a.priority.charAt(0).toUpperCase() + a.priority.slice(1) : '—'),
-    editable: true,
-    editType: 'select',
-    options: PRIORITY_OPTIONS,
-  },
-  { key: 'quantity', header: 'Qty', accessor: a => a.quantity ?? '', editable: true, editType: 'number', align: 'right' },
-  { key: 'installYear', header: 'Install Yr', accessor: a => a.installYear ?? '', editable: true, editType: 'number', align: 'right' },
-  {
-    key: 'expectedLifespan',
-    header: 'Lifespan (yrs)',
-    accessor: a => a.expectedLifespan ?? '',
-    editable: true,
-    editType: 'number',
-    align: 'right',
-    defaultHidden: true,
-  },
-  {
-    key: 'cost',
-    header: 'RS Means Cost',
-    accessor: a => a.rsMeansItem?.totalCost ?? '',
-    render: a =>
-      a.rsMeansItem ? (
-        <span className="text-blue-600">
-          ${a.rsMeansItem.totalCost.toLocaleString()} / {a.rsMeansItem.unit}
-        </span>
-      ) : (
-        '—'
-      ),
-    align: 'right',
-    defaultHidden: true,
-  },
-  {
-    key: 'notes',
-    header: 'Notes',
-    accessor: a => a.notes ?? '',
-    editable: true,
-    editType: 'text',
-    defaultHidden: true,
-  },
-  {
-    key: 'updatedAt',
-    header: 'Updated',
-    accessor: a => a.updatedAt,
-    render: a => new Date(a.updatedAt).toLocaleDateString(),
-    defaultHidden: true,
-  },
+  { key: 'priority', label: 'Priority', value: a => a.priority ?? '', type: 'select', options: PRIORITY_OPTIONS },
+  { key: 'quantity', label: 'Quantity', value: a => a.quantity ?? '', type: 'number' },
+  { key: 'namePlate', label: 'Nameplate', value: a => a.namePlate ?? '', type: 'text' },
+  { key: 'installYear', label: 'Install Year', value: a => a.installYear ?? '', type: 'number' },
+  { key: 'expectedLifespan', label: 'Expected Lifespan (yrs)', value: a => a.expectedLifespan ?? '', type: 'number' },
+  { key: 'warrantyExpiry', label: 'Warranty Expiry', value: a => (a.warrantyExpiry ? a.warrantyExpiry.slice(0, 10) : ''), type: 'date' },
+  { key: 'lastServiceDate', label: 'Last Service Date', value: a => (a.lastServiceDate ? a.lastServiceDate.slice(0, 10) : ''), type: 'date' },
+  { key: 'notes', label: 'Notes', value: a => a.notes ?? '', type: 'textarea', fullWidth: true },
 ]
 
 export function AssetsPage() {
@@ -100,6 +127,7 @@ export function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>(() =>
     (localStorage.getItem(VIEW_KEY) as ViewMode) || 'list'
   )
@@ -113,6 +141,10 @@ export function AssetsPage() {
     localStorage.setItem(VIEW_KEY, view)
   }, [view])
 
+  const columns = useMemo(() => buildAssetColumns(a => setSelectedId(a.id)), [])
+
+  const selected = selectedId ? assets.find(a => a.id === selectedId) ?? null : null
+
   const handleSave = async (id: string, patch: Partial<Asset>) => {
     const prev = assets
     setAssets(curr => curr.map(a => (a.id === id ? { ...a, ...patch } : a)))
@@ -120,8 +152,8 @@ export function AssetsPage() {
       await updateAsset(id, patch)
     } catch (err) {
       setAssets(prev) // revert on failure
-      alert('Failed to save change. Please try again.')
       console.error(err)
+      throw err
     }
   }
 
@@ -158,7 +190,7 @@ export function AssetsPage() {
           <DataGrid
             storageKey="assets"
             rows={assets}
-            columns={assetColumns}
+            columns={columns}
             getRowId={a => a.id}
             onSave={handleSave}
             onRowClick={a => navigate(`/assets/${a.id}`)}
@@ -219,6 +251,65 @@ export function AssetsPage() {
             </div>
           )}
         </>
+      )}
+
+      {selected && (
+        <RecordModal
+          key={selected.id}
+          open={!!selected}
+          onClose={() => setSelectedId(null)}
+          title={selected.name}
+          subtitle={selected.item}
+          row={selected}
+          fields={assetDetailFields}
+          onSave={patch => handleSave(selected.id, patch)}
+        >
+          {selected.photos.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">Photos</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {selected.photos.map(p => (
+                  <img key={p.id} src={p.url} alt={p.caption ?? selected.name} className="w-full h-24 object-cover rounded-lg" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {selected.rsMeansItem && (
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="text-xs font-medium text-gray-500 mb-1">RSMeans Cost Data</p>
+              <p className="text-sm font-medium text-gray-900">{selected.rsMeansItem.description}</p>
+              <p className="text-xs text-gray-400">
+                Line #{selected.rsMeansItem.lineNumber} · Unit: {selected.rsMeansItem.unit}
+              </p>
+              <p className="text-sm text-blue-800 font-semibold mt-1">
+                Total / {selected.rsMeansItem.unit}: {fmtCurrency(selected.rsMeansItem.totalCost)}
+              </p>
+            </div>
+          )}
+
+          {selected.customFields.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">Custom Fields</p>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {selected.customFields.map(f => (
+                  <div key={f.id}>
+                    <dt className="text-xs text-gray-500">{f.label}</dt>
+                    <dd className="text-sm font-medium text-gray-900">{String(f.value) || '—'}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          <div>
+            <Link to={`/assets/${selected.id}/edit`}>
+              <Button variant="secondary" size="sm">
+                <Edit2 size={14} /> Edit photos &amp; advanced fields
+              </Button>
+            </Link>
+          </div>
+        </RecordModal>
       )}
     </div>
   )

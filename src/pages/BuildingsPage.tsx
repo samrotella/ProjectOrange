@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, Building2, MapPin, ChevronRight } from 'lucide-react'
+import { Plus, Building2, MapPin, ChevronRight, Edit2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getBuildings, updateBuilding } from '../services/buildings'
 import type { Building } from '../types'
@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { DataGrid, type GridColumn } from '../components/ui/DataGrid'
 import { ViewToggle, type ViewMode } from '../components/ui/ViewToggle'
+import { RecordModal, type DetailField } from '../components/ui/RecordModal'
 
 const VIEW_KEY = 'buildings:view'
 
@@ -23,44 +24,57 @@ const BUILDING_TYPE_OPTIONS = [
   'Other',
 ].map(t => ({ value: t, label: t }))
 
-const buildingColumns: GridColumn<Building>[] = [
-  { key: 'name', header: 'Name', accessor: b => b.name, editable: true, editType: 'text', width: 200 },
-  { key: 'buildingType', header: 'Type', accessor: b => b.buildingType, editable: true, editType: 'select', options: BUILDING_TYPE_OPTIONS },
-  { key: 'address', header: 'Address', accessor: b => b.address, editable: true, editType: 'text', width: 240 },
-  { key: 'yearBuilt', header: 'Year Built', accessor: b => b.yearBuilt ?? '', editable: true, editType: 'number', align: 'right' },
-  {
-    key: 'squareFootage',
-    header: 'Sq Ft',
-    accessor: b => b.squareFootage ?? '',
-    render: b => (b.squareFootage != null ? b.squareFootage.toLocaleString() : '—'),
-    editable: true,
-    editType: 'number',
-    align: 'right',
-  },
-  { key: 'numberOfFloors', header: 'Floors', accessor: b => b.numberOfFloors ?? '', editable: true, editType: 'number', align: 'right' },
-  {
-    key: 'constructionType',
-    header: 'Construction',
-    accessor: b => b.constructionType ?? '',
-    editable: true,
-    editType: 'text',
-    defaultHidden: true,
-  },
-  {
-    key: 'notes',
-    header: 'Notes',
-    accessor: b => b.notes ?? '',
-    editable: true,
-    editType: 'text',
-    defaultHidden: true,
-  },
-  {
-    key: 'updatedAt',
-    header: 'Updated',
-    accessor: b => b.updatedAt,
-    render: b => new Date(b.updatedAt).toLocaleDateString(),
-    defaultHidden: true,
-  },
+function buildBuildingColumns(onOpen: (b: Building) => void): GridColumn<Building>[] {
+  return [
+    { key: 'name', header: 'Name', accessor: b => b.name, onClick: onOpen, width: 200 },
+    { key: 'buildingType', header: 'Type', accessor: b => b.buildingType, editable: true, editType: 'select', options: BUILDING_TYPE_OPTIONS },
+    { key: 'address', header: 'Address', accessor: b => b.address, editable: true, editType: 'text', width: 240 },
+    { key: 'yearBuilt', header: 'Year Built', accessor: b => b.yearBuilt ?? '', editable: true, editType: 'number', align: 'right' },
+    {
+      key: 'squareFootage',
+      header: 'Sq Ft',
+      accessor: b => b.squareFootage ?? '',
+      render: b => (b.squareFootage != null ? b.squareFootage.toLocaleString() : '—'),
+      editable: true,
+      editType: 'number',
+      align: 'right',
+    },
+    { key: 'numberOfFloors', header: 'Floors', accessor: b => b.numberOfFloors ?? '', editable: true, editType: 'number', align: 'right' },
+    {
+      key: 'constructionType',
+      header: 'Construction',
+      accessor: b => b.constructionType ?? '',
+      editable: true,
+      editType: 'text',
+      defaultHidden: true,
+    },
+    {
+      key: 'notes',
+      header: 'Notes',
+      accessor: b => b.notes ?? '',
+      editable: true,
+      editType: 'text',
+      defaultHidden: true,
+    },
+    {
+      key: 'updatedAt',
+      header: 'Updated',
+      accessor: b => b.updatedAt,
+      render: b => new Date(b.updatedAt).toLocaleDateString(),
+      defaultHidden: true,
+    },
+  ]
+}
+
+const buildingDetailFields: DetailField<Building>[] = [
+  { key: 'name', label: 'Name', value: b => b.name, type: 'text' },
+  { key: 'buildingType', label: 'Type', value: b => b.buildingType, type: 'select', options: BUILDING_TYPE_OPTIONS },
+  { key: 'address', label: 'Address', value: b => b.address, type: 'text', fullWidth: true },
+  { key: 'yearBuilt', label: 'Year Built', value: b => b.yearBuilt ?? '', type: 'number' },
+  { key: 'squareFootage', label: 'Square Footage', value: b => b.squareFootage ?? '', type: 'number' },
+  { key: 'numberOfFloors', label: 'Number of Floors', value: b => b.numberOfFloors ?? '', type: 'number' },
+  { key: 'constructionType', label: 'Construction Type', value: b => b.constructionType ?? '', type: 'text' },
+  { key: 'notes', label: 'Notes', value: b => b.notes ?? '', type: 'textarea', fullWidth: true },
 ]
 
 export function BuildingsPage() {
@@ -68,6 +82,7 @@ export function BuildingsPage() {
   const navigate = useNavigate()
   const [buildings, setBuildings] = useState<Building[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>(() =>
     (localStorage.getItem(VIEW_KEY) as ViewMode) || 'list'
   )
@@ -81,6 +96,10 @@ export function BuildingsPage() {
     localStorage.setItem(VIEW_KEY, view)
   }, [view])
 
+  const columns = useMemo(() => buildBuildingColumns(b => setSelectedId(b.id)), [])
+
+  const selected = selectedId ? buildings.find(b => b.id === selectedId) ?? null : null
+
   const handleSave = async (id: string, patch: Partial<Building>) => {
     const prev = buildings
     setBuildings(curr => curr.map(b => (b.id === id ? { ...b, ...patch } : b)))
@@ -88,8 +107,8 @@ export function BuildingsPage() {
       await updateBuilding(id, patch)
     } catch (err) {
       setBuildings(prev) // revert on failure
-      alert('Failed to save change. Please try again.')
       console.error(err)
+      throw err
     }
   }
 
@@ -122,7 +141,7 @@ export function BuildingsPage() {
         <DataGrid
           storageKey="buildings"
           rows={buildings}
-          columns={buildingColumns}
+          columns={columns}
           getRowId={b => b.id}
           onSave={handleSave}
           onRowClick={b => navigate(`/buildings/${b.id}`)}
@@ -152,6 +171,38 @@ export function BuildingsPage() {
             </Link>
           ))}
         </div>
+      )}
+
+      {selected && (
+        <RecordModal
+          key={selected.id}
+          open={!!selected}
+          onClose={() => setSelectedId(null)}
+          title={selected.name}
+          subtitle={selected.buildingType}
+          row={selected}
+          fields={buildingDetailFields}
+          onSave={patch => handleSave(selected.id, patch)}
+        >
+          {selected.photos.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">Photos</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {selected.photos.map(p => (
+                  <img key={p.id} src={p.url} alt={p.caption ?? selected.name} className="w-full h-24 object-cover rounded-lg" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <Link to={`/buildings/${selected.id}/edit`}>
+              <Button variant="secondary" size="sm">
+                <Edit2 size={14} /> Edit photos &amp; advanced fields
+              </Button>
+            </Link>
+          </div>
+        </RecordModal>
       )}
     </div>
   )
